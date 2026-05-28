@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Список техники{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Объявления о продаже/аренде техники</h1>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <form method="get" class="mb-4">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Поиск по названию, модели или описанию..." value="{{ search_query }}">
+                    <button class="btn btn-outline-secondary" type="submit">Найти</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="sort">Сортировка:</label>
+                <select id="sort" onchange="location.href=this.value" class="form-select">
+                    <option value="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}sort=price_asc"
+                        {% if sort_order == 'price_asc' %}selected{% endif %}>
+                        Цена: по возрастанию
+                    </option>
+            <option value="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}sort=price_desc"
+                        {% if sort_order == 'price_desc' %}selected{% endif %}>
+                        Цена: по убыванию
+            </option>
+            <option value="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}sort=year_new"
+                        {% if sort_order == 'year_new' %}selected{% endif %}>
+                        Год: новые сначала
+            </option>
+            <option value="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}sort=views"
+                        {% if sort_order == 'views' %}selected{% endif %}>
+                        По популярности
+            </option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col">
+            <form method="get" class="row g-3">
+                {% if search_query %}
+                    <input type="hidden" name="search" value="{{ search_query }}">
+                {% endif %}
+
+                {% if sort_order %}
+                    <input type="hidden" name="sort" value="{{ sort_order }}">
+                {% endif %}
+
+                <div class="col-md-4">
+                    <select name="equipment_type" class="form-select">
+                        <option value="">Все типы техники</option>
+                        {% for type in equipment_types %}
+                            <option value="{{ type.id }}"
+                                {% if request.GET.equipment_type == type.id|stringformat:"i" %}selected{% endif %}>
+                                {{ type.name }}
+            </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <select name="region" class="form-select">
+                <option value="">Все регионы</option>
+                {% for region in regions %}
+                    <option value="{{ region.id }}"
+                        {% if request.GET.region == region.id|stringformat:"i" %}selected{% endif %}>
+                        {{ region.name }}
+            </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary">Применить</button>
+        </div>
+    </form>
+</div>
+</div>
+
+<div class="row">
+    {% for equipment in equipment_list %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                {% if equipment.image %}
+                    <img src="{{ equipment.image.url }}" class="card-img-top" alt="{{ equipment.title }}" style="height: 200px; object-fit: cover;">
+                {% endif %}
+                <div class="card-body d-flex flex-column">
+                    <h6 class="card-title">{{ equipment.title }}</h6>
+            <p class="card-text mb-2">{{ equipment.equipment_type.name }} | {{ equipment.model }}</p>
+            <p class="card-text mb-2"><strong>Цена:</strong> {{ equipment.price }} руб.</p>
+            <p class="card-text mb-2"><strong>Регион:</strong> {{ equipment.region.name }}</p>
+            <div class="mt-auto">
+                <p class="mb-2">
+                    <span class="badge {% if equipment.is_sold %}bg-danger{% else %}bg-success{% endif %}">
+                        {% if equipment.is_sold %}Продана{% else %}В продаже{% endif %}
+            </span>
+            <small class="text-muted">Просмотров: {{ equipment.views_count }}</small>
+        </p>
+        <a href="{% url 'equipment:equipment_detail' equipment.pk %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
+    </div>
+</div>
+</div>
+{% empty %}
+<div class="col-12">
+<div class="alert alert-info">По вашему запросу ничего не найдено.</div>
+</div>
+{% endfor %}
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Page navigation">
+<ul class="pagination justify-content-center">
+{% if page_obj.has_previous %}
+<li class="page-item">
+<a class="page-link" href="?page=1
+&{% if search_query %}search={{ search_query|urlencode }}&{% endif %}
+{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}
+{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}
+{% if sort_order %}sort={{ sort_order }}{% endif %}">&laquo; Первая</a>
+</li>
+<li class="page-item">
+<a class="page-link" href="?page={{ page_obj.previous_page_number }}
+&{% if search_query %}search={{ search_query|urlencode }}&{% endif %}
+{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}
+{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}
+{% if sort_order %}sort={{ sort_order }}{% endif %}">Предыдущая</a>
+</li>
+{% endif %}
+
+<li class="page-item disabled">
+<span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+</li>
+
+{% if page_obj.has_next %}
+    <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}
+            &{% if search_query %}search={{ search_query|urlencode }}&{% endif %}
+            {% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}
+            {% if request.GET.region %}region={{ request.GET.region }}&{% endif %}
+            {% if sort_order %}sort={{ sort_order }}{% endif %}">Следующая</a>
+    </li>
+    <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}
+            &{% if search_query %}search={{ search_query|urlencode }}&{% endif %}
+            {% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}
+            {% if request.GET.region %}region={{ request.GET.region }}&{% endif %}
+            {% if sort_order %}sort={{ sort_order }}{% endif %}">Последняя &raquo;</a>
+    </li>
+{% endif %}
+</ul>
+</nav>
+{% endif %}
+>
+<div class="save-search-section mt-3">
+  <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#saveSearchModal">
+    <i class="fas fa-save me-2"></i>Сохранить этот поиск
+  </button>
+</div>
+
+<div class="modal fade" id="saveSearchModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Сохранить поиск</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="saveSearchForm" method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="searchName" class="form-label">Название поиска</label>
+            <input type="text" class="form-control" id="searchName" name="name" required>
+          </div>
+          <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="notifyCheckbox" name="notify" checked>
+            <label class="form-check-label" for="notifyCheckbox">Получать уведомления о новых объявлениях</label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+        <button type="submit" form="saveSearchForm" class="btn btn-primary">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+{% endblock %}
+
+<script>
+function getCsrfToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]');
+    return token ? token.value : null;
+}
+
+function getCurrentSearchFilters() {
+    const filters = {};
+    const searchInput = document.querySelector('input[name="search"]');
+    const equipmentTypeSelect = document.querySelector('select[name="equipment_type"]');
+    const regionSelect = document.querySelector('select[name="region"]');
+    const sortSelect = document.getElementById('sort');
+
+    if (searchInput && searchInput.value) {
+        filters.search = searchInput.value;
+    }
+    if (equipmentTypeSelect && equipmentTypeSelect.value) {
+        filters.equipment_type = equipmentTypeSelect.value;
+    }
+    if (regionSelect && regionSelect.value) {
+        filters.region = regionSelect.value;
+    }
+    if (sortSelect && sortSelect.value) {
+        const urlParams = new URLSearchParams(new URL(sortSelect.value).search);
+        filters.sort = urlParams.get('sort');
+    }
+
+    return filters;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('saveSearchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = {
+            name: document.getElementById('searchName').value,
+            notify: document.getElementById('notifyCheckbox').checked,
+            filters: getCurrentSearchFilters()
+        };
+
+        fetch('/api/save-search/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'saved') {
+                const modalElement = document.getElementById('saveSearchModal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) {
+                    modal.hide();
+                }
+                alert('Поиск сохранён!');
+            } else {
+                alert('Произошла ошибка при сохранении поиска. Попробуйте ещё раз.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Произошла сетевая ошибка. Проверьте подключение и попробуйте ещё раз.');
+        });
+    });
+});
+</script>

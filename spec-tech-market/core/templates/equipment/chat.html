@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Чат с {{ other_user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Чат с {{ other_user.username }}</h2>
+
+    {% if equipment %}
+        <div class="alert alert-info">
+            Обсуждение объявления: <a href="{% url 'equipment_detail' equipment.pk %}">{{ equipment.title }}</a>
+        </div>
+    {% endif %}
+
+    <div class="chat-container" style="height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px;">
+        {% for message in messages %}
+            <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %} mb-3">
+                <strong>{{ message.sender.username }}:</strong>
+                <p>{{ message.message }}</p>
+                <small class="text-muted">{{ message.timestamp|date:"d.m.Y H:i" }}</small>
+            </div>
+        {% endfor %}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="col-10">
+            <input type="text" name="message" class="form-control" placeholder="Введите сообщение..." required>
+        </div>
+        <div class="col-2">
+            <button type="submit" class="btn btn-primary w-100">Отправить</button>
+        </div>
+    </form>
+
+    <a href="{% url 'equipment_list' %}" class="btn btn-secondary mt-3">Вернуться к списку техники</a>
+</div>
+{% endblock %}

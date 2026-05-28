@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Контакты{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Обратная связь</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <button type="submit" class="btn btn-primary">Отправить</button>
+        <a href="{% url 'home' %}" class="btn btn-secondary">Назад</a>
+    </form>
+</div>
+{% endblock %}

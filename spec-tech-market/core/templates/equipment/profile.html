@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h1>Личный кабинет</h1>
+    </div>
+  </div>
+
+  <div class="verification-section">
+    <h3>Подтверждение аккаунта</h3>
+    <div class="verification-status">
+      <p>
+        <i class="fas {% if user.profile.email_verified %}fa-check-circle text-success{% else %}fa-times-circle text-muted{% endif %}"></i>
+        Email: {% if user.profile.email_verified %}Подтверждён{% else %}Не подтверждён{% endif %}
+      </p>
+      <p>
+        <i class="fas {% if user.profile.phone_verified %}fa-check-circle text-success{% else %}fa-times-circle text-muted{% endif %}"></i>
+        Телефон: {% if user.profile.phone_verified %}Подтверждён{% else %}Не подтверждён{% endif %}
+      </p>
+    </div>
+
+    <div class="verification-actions">
+      {% if not user.profile.email_verified %}
+        <button class="btn btn-outline-primary" onclick="sendVerificationCode('email')">
+          Подтвердить email
+        </button>
+      {% endif %}
+      {% if not user.profile.phone_verified %}
+        <button class="btn btn-outline-primary" onclick="sendVerificationCode('phone')">
+          Подтвердить телефон
+        </button>
+      {% endif %}
+    </div>
+
+    <div id="verificationModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h4>Введите код подтверждения</h4>
+        <input type="text" id="verificationCode" maxlength="6" placeholder="123456">
+        <button onclick="submitVerificationCode()">Подтвердить</button>
+      </div>
+    </div>
+  </div>
+
+  <hr class="my-4">
+
+  <div class="row">
+    <div class="col-12">
+      <div class="profile-container">
+        <div class="profile-tabs">
+          <button class="tab-btn active" data-tab="history">История объявлений</button>
+          <button class="tab-btn" data-tab="favorites">Избранное</button>
+          <button class="tab-btn" data-tab="chats">Чаты</button>
+          <button class="tab-btn" data-tab="notifications">Уведомления</button>
+          <button class="tab-btn" data-tab="saved-searches">Сохранённые поиски</button>
+        </div>
+
+        <div id="history" class="tab-content active">
+          <div class="loading">Загрузка истории объявлений...</div>
+        </div>
+
+        <div id="favorites" class="tab-content">
+          <div class="loading">Загрузка избранных объявлений...</div>
+        </div>
+
+        <div id="chats" class="tab-content">
+          <div class="loading">Загрузка истории чатов...</div>
+        </div>
+
+        <div id="notifications" class="tab-content">
+          <div class="loading">Загрузка настроек уведомлений...</div>
+        </div>
+
+        <div id="saved-searches" class="tab-content">
+          <h3>Сохранённые поисковые запросы</h3>
+          <div id="saved-searches-content">
+            <p>Загрузка сохранённых поисков...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  }
+  const tabCache = {};
+
+  document.addEventListener('DOMContentLoaded', function() {
+    initTabs();
+    loadTabContent('history');
+  });
+
+  function initTabs() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabName = btn.getAttribute('data-tab');
+к
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        btn.classList.add('active');
+        document.getElementById(tabName).classList.add('active');
+
+        loadTabContent(tabName);
+      });
+    });
+  }
+
+  function loadTabContent(tabName) {
+    const contentDiv = document.getElementById(tabName);
+    const loadingDiv = contentDiv.querySelector('.loading');
+
+    if (tabCache[tabName]) {
+      renderTabContent(tabName, tabCache[tabName], contentDiv);
+      return;
+    }
+
+    if (loadingDiv) {
+      loadingDiv.style.display = 'block';
+    }
+
+    let apiUrl = '';
+    switch (tabName) {
+      case 'history':
+        apiUrl = '/api/user/equipment/';
+        break;
+      case 'favorites':
+        apiUrl = '/api/user/favorites/';
+        break;
+      case 'chats':
+        apiUrl = '/api/user/chats/';
+        break;
+      case 'notifications':
+        apiUrl = '/api/user/notifications/settings/';
+        break;
+      case 'saved-searches':
+        renderSavedSearches();
+        return;
+    }
+
+    fetch(apiUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        tabCache[tabName] = data;
+        renderTabContent(tabName, data, contentDiv);
+      })
+      .catch(error => {
+        console.error('Ошибка загрузки данных:', error);
+        contentDiv.innerHTML = `
+          <div class="error-message">
+            <p>Не удалось загрузить данные. Попробуйте обновить страницу.</p>
+            <button class="btn btn-secondary" onclick="loadTabContent('${tabName}')">
+              Повторить загрузку
+            </button>
+          </div>
+        `;
+      })
+      .finally(() => {
+        if (loadingDiv) {
+          loadingDiv.style.display = 'none';
+        }
+      });
+  }
+
+  function renderTabContent(tabName, data, container) {
+    let html = '';
+
+    switch (tabName) {
+      case 'history':
+        html = data.length > 0
+          ? `
+            <div class="equipment-list">
+              ${data.map(item => `
+                <div class="equipment-item card mb-3">
+                  <div class="card-body">
+                    <h5 class="card-title">${item.title || 'Без названия'}</h5>
+                    <p class="card-text">${item.description || 'Нет описания'}</p>
+                    <small class="text-muted">
+              Создано: ${item.created_at || 'Неизвестно'}
+            </small>
+          </div>
+        </div>`).join('')}
+            </div>
+          `
+          : '<p class="no-data">У вас пока нет объявлений.</p>';
+        break;
+
+      case 'favorites':
+        html = data.length > 0
+          ? `
+            <div class="favorites-list">
+              ${data.map(item => `
+                <div class="favorite-item card mb-3">
+                  <div class="card-body">
+            <h5 class="card-title">${item.title || 'Без названия'}</h5>
+            <a href="${item.url}" class="btn btn-sm btn-primary">Перейти к объявлению</a>
+          </div>
+        </div>
+              `).join('')}
+            </div>
+          `
+          : '<p class="no-data">У вас пока нет избранных объявлений.</p>';
+        break;
+
+      case 'chats':
+        html = data.length > 0
+          ? `
+            <div class="chats-list">
+              ${data.map(chat => `
+                <div class="chat-item card mb-3">
+            <div class="card-body">
+              <h5 class="card-title">${chat.title || 'Чат без названия'}</h5>
+              <p class="card-text">
+                Последнее сообщение: ${chat.last_message || 'Нет сообщений'}
+              </p>
+              <small class="text-muted">
+                Обновлено: ${chat.updated_at || 'Неизвестно'}
+              </small>
+            </div>
+          </div>
+                `).join('')}
+              </div>
+            `
+            : '<p class="no-data">У вас пока нет чатов.</p>';
+          break;
+
+      case 'notifications':
+        html = `
+          <div class="notifications-settings">
+            <h4>Настройки уведомлений</h4>
+            <form id="notifications-form">
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="email-notifications"
+                       ${data.email_notifications ? 'checked' : ''}>
+                <label class="form-check-label" for="email-notifications">
+                  Email‑уведомления о новых объявлениях
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="push-notifications"
+                       ${data.push_notifications ? 'checked' : ''}>
+                <label class="form-check-label" for="push-notifications">
+                  Push‑уведомления
+                </label>
+              </div>
+                <button type="submit" class="btn btn-primary mt-3">Сохранить настройки</button>
+            </form>
+          </div>
+        `;
+        setupNotificationsForm();
+        break;
+
+      case 'saved-searches':
+        html = data.length > 0
+          ? `
+            <div class="saved-searches-list">
+              ${data.map(search => `
+                <div class="saved-search-item card mb-3">
+                  <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <h5>${search.name || 'Без названия'}</h5>
+                <small class="text-muted">
+                  Создан: ${search.created_at || 'Неизвестно'}
+                  ${search.last_notified ? `| Последнее уведомление: ${search.last_notified}` : ''}
+                </small>
+                <div class="search-stats text-muted">
+                  <small>
+                    Найдено: <strong>${search.get_new_count || 0}</strong> новых объявлений за последнюю неделю
+                  </small>
+                </div>
+              </div>
+              <div class="search-actions">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="notify${search.id}"
+                         ${search.notify ? 'checked' : ''}
+                         onchange="toggleNotification(${search.id}, this.checked)">
+                  <label class="form-check-label" for="notify${search.id}">Уведомления</label>
+                </div>
+                <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteSearch(${search.id})">Удалить</button>
+              </div>
+            </div>
+            <div class="mt-2">
+              <span class="badge bg-primary">Найдено: ${search.get_new_count || 0} новых за неделю</span>
+              <a href="/equipment/?${search.get_filter_params}" class="btn btn-sm btn-primary ms-2">Показать все</a>
+            </div>
+          </div>
+        </div>
+              `).join('')}
+            </div>
+          `
+          : '<p class="no-data">У вас пока нет сохранённых поисков.</p>';
+        break;
+    }
+
+    container.innerHTML = html;
+  }
+
+  function setupNotificationsForm() {
+    const form = document.getElementById('notifications-form');
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const emailNotifications = document.getElementById('email-notifications').checked;
+      const pushNotifications = document.getElementById('push-notifications').checked;
+
+      fetch('/api/user/notifications/settings/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCsrfToken(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email_notifications: emailNotifications,
+          push_notifications: pushNotifications
+        })
+      })
+        .then(response => {
+          if (response.ok) {
+            alert('Настройки уведомлений сохранены');
+          } else {
+            throw new Error('Ошибка сохранения настроек');
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка сохранения настроек:', error);
+          alert('Не удалось сохранить настройки уведомлений');
+        });
+    });
+  }
+
+  function renderSavedSearches() {
+    const savedSearchesContent = document.getElementById('saved-searches-content');
+
+    fetch('/api/user/saved-searches/')
+      .then(response => response.json())
+      .then(data => {
+        if (data.length > 0) {
+          savedSearchesContent.innerHTML = `
+            ${data.map(search => `
+              <div class="saved-search-item card mb-3">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <h5>${search.name}</h5>
+              <small class="text-muted">
+                Создан: ${search.created_at}
+                ${search.last_notified ? `| Последнее уведомление: ${search.last_notified}` : ''}
+              </small>
+              <div class="search-stats text-muted">
+                <small>
+                  Найдено: <strong>${search.get_new_count}</strong> новых объявлений за последнюю неделю
+                </small>
+              </div>
+            </div>
+            <div class="search-actions">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="notify${search.id}"
+                       ${search.notify ? 'checked' : ''}
+                       onchange="toggleNotification(${search.id}, this.checked)">
+                <label class="form-check-label" for="notify${search.id}">Уведомления</label>
+              </div>
+              <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteSearch(${search.id})">Удалить</button>
+            </div>
+          </div>
+          <div class="mt-2">
+            <span class="badge bg-primary">Найдено: ${search.get_new_count} новых за неделю</span>
+            <a href="/equipment/?${search.get_filter_params}" class="btn btn-sm btn-primary ms-2">Показать все</a>
+          </div>
+        </div>
+      </div>
+            `).join('')}
+          `;
+        } else {
+          savedSearchesContent.innerHTML = '<p>У вас пока нет сохранённых поисков.</p>';
+        }
+      })
+      .catch(error => {
+        console.error('Ошибка загрузки сохранённых поисков:', error);
+        savedSearchesContent.innerHTML = '<p class="error">Ошибка загрузки сохранённых поисков</p>';
+      });
+  }
+
+  function toggleNotification(searchId, enabled) {
+    fetch(`/api/toggle-notification/${searchId}/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCsrfToken()},
+      body: JSON.stringify({notify: enabled})
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('Ошибка при изменении настроек уведомлений');
+      })
+      .catch(error => console.error('Ошибка:', error));
+  }
+
+  function deleteSearch(searchId) {
+    if (confirm('Удалить этот сохранённый поиск?')) {
+      fetch(`/api/delete-search/${searchId}/`, {method: 'DELETE'})
+        .then(() => location.reload())
+        .catch(error => console.error('Ошибка удаления:', error));
+    }
+  }
+
+  function getCsrfToken() {
+    const token = document.querySelector('[name=csrfmiddlewaretoken]');
+    return token ? token.value : '';
+}
+
+function sendVerificationCode(method) {
+    fetch('/accounts/api/send-verification-code/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({method: method})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showVerificationModal(method);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function showVerificationModal(method) {
+    document.getElementById('verificationModal').style.display = 'block';
+    window.currentVerificationMethod = method;
+    document.getElementById('verificationCode').value = '';
+}
+
+function submitVerificationCode() {
+    const code = document.getElementById('verificationCode').value;
+    const method = window.currentVerificationMethod;
+
+    if (!code || code.length !== 6) {
+        alert('Пожалуйста, введите 6‑значный код');
+        return;
+    }
+
+    fetch('/accounts/api/verify-code/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({code: code, method: method})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('Подтверждение успешно завершено!');
+            location.reload();
+        } else {
+            alert(data.message || 'Произошла ошибка при подтверждении');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Произошла сетевая ошибка');
+    });
+}
+
+document.querySelector('.close').addEventListener('click', function() {
+    document.getElementById('verificationModal').style.display = 'none';
+});
+
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('verificationModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+</script>
+
+<style>
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+  }
+
+  .close {
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .verification-section {
+    margin-bottom: 2rem;
+  }
+
+  .profile-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .profile-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover {
+    background: #e9ecef;
+  }
+
+  .tab-btn.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+  }
+
+  .tab-content {
+    display: none;
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: white;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    font-style: italic;
+    color: #6c757d;
+  }
+
+  .error-message {
+    text-align: center;
+    padding: 40px;
+    color: #dc3545;
+  }
+
+  .no-data {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+    font-style: italic;
+  }
+
+  /* Стили для сохранённых поисков */
+  .saved-search-item {
+    border-left: 4px solid #007bff;
+  }
+
+  .search-stats {
+    margin-top: 8px;
+  }
+
+  .search-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .badge {
+    font-size: 0.8rem;
+  }
+
+  /* Адаптивность */
+  @media (max-width: 768px) {
+    .profile-tabs {
+      flex-direction: column;
+    }
+    .tab-btn {
+      text-align: left;
+    }
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Сравнение оборудования{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Сравнение оборудования</h2>
+
+    <table class="comparison-table table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Характеристика</th>
+                {% for equipment in equipments %}
+                    <th>
+                        <img src="{{ equipment.image.url }}" alt="{{ equipment.title }}" width="80" class="mb-2">
+                        <br>
+                        <strong>{{ equipment.title }}</strong>
+                    </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for feature in features %}
+                <tr>
+                    <td><strong>{{ feature.name }}</strong></td>
+                    {% for equipment in equipments %}
+                        {% with value=equipment.get_feature_value:feature %}
+                            <td class="{% if feature.best_value == value %}highlight best-value{% endif %}">
+                                {{ value|default:"—" }}
+                            </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'equipment_list' %}" class="btn btn-secondary">Вернуться к списку техники</a>
+    </div>
+</div>
+{% endblock %}

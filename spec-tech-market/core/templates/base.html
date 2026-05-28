@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}СпецТехника Маркет{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 4rem;
+            padding: 2rem 0;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+        .chat-container {
+            background-color: #f8f9fa;
+        }
+        .message.sent {
+            text-align: right;
+            margin-left: auto;
+            max-width: 70%;
+        }
+        .message.received {
+            text-align: left;
+            margin-right: auto;
+            max-width: 70%;
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .comparison-table .highlight {
+            background-color: #d4edda;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">СпецТехника Маркет</a>
+            <div class="navbar-nav ms-auto">
+                <a href="{% url 'equipment:equipment_list' %}">Каталог</a>
+                <a class="nav-link text-white me-3" href="{% url 'contact' %}">Контакты</a>
+                <a class="nav-link text-white me-3" href="{% url 'equipment:chat_general' %}">Общий чат</a>
+
+                {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Уведомления
+                            {% if unread_notifications_count %}
+                                <span class="badge bg-danger">{{ unread_notifications_count }}</span>
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% for notification in request.user.notifications.all|slice:":5" %}
+                                <li>
+                            <a class="dropdown-item {% if not notification.is_read %}fw-bold{% endif %}"
+                               href="{{ notification.link }}">
+                                {{ notification.message }}
+                                <small class="text-muted d-block">{{ notification.created_at|date:"d.m.Y H:i" }}</small>
+            </a>
+        </li>
+            {% empty %}
+                <li><span class="dropdown-item text-muted">Нет уведомлений</span></li>
+            {% endfor %}
+            {% if request.user.notifications.all.count > 5 %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'notifications' %}">Все уведомления</a></li>
+            {% endif %}
+        </ul>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'logout' %}">Выйти ({{ user.username }})</a>
+    </li>
+{% else %}
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'login' %}">Войти</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-white" href="{% url 'register' %}">Регистрация</a>
+    </li>
+{% endif %}
+</div>
+</div>
+</nav>
+
+<div class="container mt-4">
+    {% block content %}
+    {% endblock %}
+</div>
+
+<footer class="footer">
+    <div class="container">
+        <p class="mb-0">© 2024 СпецТехника Маркет. Все права защищены.</p>
+        <p>
+            <small>
+                <a href="#">Политика конфиденциальности</a> |
+                <a href="#">Условия использования</a>
+            </small>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
