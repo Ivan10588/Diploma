@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import timedelta
+from urllib.parse import urlencode
 
 class EquipmentType(models.Model):
     name = models.CharField(max_length=100)
@@ -45,7 +48,6 @@ class Review(models.Model):
     def __str__(self):
         return f'Review by {self.author.username} for {self.equipment.title}'
 
-
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE)
@@ -56,6 +58,7 @@ class Favorite(models.Model):
 
 class ComparisonList(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
 
 class ComparisonItem(models.Model):
     comparison_list = models.ForeignKey(ComparisonList, on_delete=models.CASCADE)
@@ -77,45 +80,10 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='equipment_profile')
     phone = models.CharField(max_length=20, blank=True)
     email_verified = models.BooleanField(default=False)
     phone_verified = models.BooleanField(default=False)
-
-class SavedSearch(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    filters = models.JSONField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-class NotificationSubscription(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
-    filters = models.JSONField()
-    frequency = models.CharField(
-        max_length=20,
-        default='daily'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-class Command(BaseCommand):
-    def handle(self, *args, **options):
-        for subscription in NotificationSubscription.objects.all():
-            new_equipment = Equipment.objects.filter(
-                created_at__gte=timezone.now() - timedelta(hours=24)
-            ).filter(**subscription.filters)
-            if new_equipment.exists():
-                create_notification(
-                    subscription.user,
-                    f"Новые объявления по вашему поиску: {subscription.name}",
-                    link=reverse('equipment_list') + '?' + urlencode(subscription.filters)
-                )
-
-class SellerRating(models.Model):
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
-    average_score = models.DecimalField(max_digits=3, decimal_places=1)
-    review_count = models.IntegerField(default=0)
-    completion_rate = models.DecimalField(max_digits=4, decimal_places=2)
-    last_updated = models.DateTimeField(auto_now=True)
 
 class SavedSearch(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='saved_searches')
@@ -135,10 +103,9 @@ class SavedSearch(models.Model):
     class Meta:
         unique_together = ['user', 'name']
 
+
     def get_new_count(self):
         """Возвращает количество новых объявлений по этому поиску за последнюю неделю"""
-        from django.utils import timezone
-        from datetime import timedelta
         week_ago = timezone.now() - timedelta(days=7)
         new_equipment = Equipment.objects.filter(
             created_at__gte=week_ago
@@ -147,22 +114,14 @@ class SavedSearch(models.Model):
 
     def get_filter_params(self):
         """Преобразует фильтры в строку параметров URL"""
-        from urllib.parse import urlencode
         return urlencode(self.filters)
+
 
 class NewEquipmentNotification(models.Model):
     saved_search = models.ForeignKey(SavedSearch, on_delete=models.CASCADE)
     equipment = models.ForeignKey('Equipment', on_delete=models.CASCADE)
     sent = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
-class ComparisonList(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-class ComparisonItem(models.Model):
-    comparison_list = models.ForeignKey(ComparisonList, on_delete=models.CASCADE)
-    equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE)
 
 class SellerRating(models.Model):
     seller = models.OneToOneField(User, on_delete=models.CASCADE, related_name='rating')
@@ -173,6 +132,7 @@ class SellerRating(models.Model):
     class Meta:
         verbose_name = 'Рейтинг продавца'
         verbose_name_plural = 'Рейтинги продавцов'
+
 
     def __str__(self):
         return f'{self.seller.username} — {self.average_score:.1f} ({self.review_count} отзывов)'

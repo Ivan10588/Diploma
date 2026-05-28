@@ -3,11 +3,11 @@
 import os
 import sys
 
-sys.path.append('spec-tech-market')
+sys.path.append('spec_tech_market')
 
 def main():
     """Run administrative tasks."""
-    os.environ['DJANGO_SETTINGS_MODULE'] = 'spec_tech_market.spec_tech.settings'
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'spec_tech_market.spec_tech.settings')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

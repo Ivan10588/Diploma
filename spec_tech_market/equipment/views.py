@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from .models import (
     Equipment, EquipmentType, Region, Notification,
-    Favorite, ComparisonList, ComparisonItem, ChatMessage
+    Favorite, ComparisonList, ComparisonItem, ChatMessage, SavedSearch
 )
 from .forms import EquipmentForm, ContactSellerForm, ReviewForm
 from .notifications import create_notification
@@ -18,6 +18,11 @@ from django.contrib.auth.forms import UserCreationForm
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from weasyprint import HTML
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views import View
+from django.contrib.auth.decorators import login_required
 
 
 class EquipmentListView(ListView):
@@ -297,6 +302,24 @@ def export_comparison_to_pdf(request, comparison_id):
     )
     pdf_file = HTML(string=html_template).write_pdf()
     response = HttpResponse(pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="сравнение_{comparison_id}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="comparison_{comparison_id}.pdf"'
     return response
 
+@login_required
+def user_profile(request):
+    """
+    Представление для отображения профиля пользователя.
+    """
+    user_equipment = Equipment.objects.filter(owner=request.user)
+
+    favorites = Favorite.objects.filter(user=request.user).select_related('equipment')
+
+    context = {
+        'user': request.user,
+        'user_equipment': user_equipment,
+        'favorites': favorites,
+        'equipment_count': user_equipment.count(),
+        'favorite_count': favorites.count(),
+    }
+
+    return render(request, 'equipment/user_profile.html', context)

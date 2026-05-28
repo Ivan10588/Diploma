@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'equipment',
     'users',
     'spec_tech',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -185,3 +186,5 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 14400.0,
     },
 }
+
+LOGIN_URL = '/accounts/login/'

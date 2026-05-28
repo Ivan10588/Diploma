@@ -1,10 +1,13 @@
-from django.urls import path
+from . import views
+from django.urls import path, include
 from django.contrib.auth.views import LoginView, LogoutView
 from .views import (
     EquipmentListView, EquipmentDetailView, EquipmentCreateView, 
     contact_seller, add_review, toggle_favorite, add_to_comparison, comparison_view, chat_view, 
-    chat_view, toggle_sold_status, register, equipment_list
+    chat_view, toggle_sold_status, register, equipment_list, user_profile, SaveSearchView, ToggleNotificationView,
+    DeleteSearchView, export_comparison_to_pdf
 )
+
 
 app_name = 'equipment'
 
@@ -25,7 +28,7 @@ urlpatterns = [
     path('register/', register, name='register'),
     path('list/', equipment_list, name='equipment_list'),
     path('list/', EquipmentListView.as_view(), name='equipment_list'),
-    path('profile/', profile, name='user_profile'),
+    path('profile/', user_profile, name='user_profile'),
     path('api/save-search/', SaveSearchView.as_view(), name='save_search'),
     path('api/toggle-notification/<int:search_id>/', ToggleNotificationView.as_view(), name='toggle_notification'),
     path('api/delete-search/<int:search_id>/', DeleteSearchView.as_view(), name='delete_search'),
