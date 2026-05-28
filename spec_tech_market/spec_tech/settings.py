@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'core',
     'equipment',
     'users',
+    'spec_tech',
 ]
 
 MIDDLEWARE = [
