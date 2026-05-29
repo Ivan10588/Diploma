@@ -201,22 +201,38 @@ def chat_view(request, equipment_id=None, user_id=None):
     if request.method == 'POST':
         message_text = request.POST.get('message')
         if message_text:
-            ChatMessage.objects.create(
+            chat_message = ChatMessage.objects.create(
                 sender=request.user,
                 receiver=other_user,
                 equipment=equipment,
                 message=message_text
             )
-            if other_user != request.user:
-                create_notification(
-                    user=other_user,
-                    message=f'Новое сообщение от {request.user.username}',
-                    equipment=equipment
-                )
+
+            if equipment_id and equipment.owner:
+                target_user = equipment.owner
+            elif user_id:
+                target_user = other_user
+            else:
+                messages.error(request, 'Невозможно отправить уведомление — нет получателя')
+                return redirect(request.get_full_path())
+
+            if equipment_id:
+                some_url = reverse('equipment:chat_for_equipment', kwargs={'equipment_id': equipment_id})
+            else:
+                some_url = reverse('equipment:chat_general', kwargs={'user_id': user_id})
+
+            create_notification(
+                other_user=target_user,
+                message=f'Новое сообщение от {request.user.username}: {message_text[:50]}...',
+                url=some_url,
+                user=request.user
+            )
+
             if equipment_id:
                 return redirect('equipment:chat_for_equipment', equipment_id=equipment_id)
             else:
                 return redirect('equipment:chat_general', user_id=user_id)
+
         messages.error(request, 'Сообщение не может быть пустым')
         return redirect(request.get_full_path())
 

@@ -12,7 +12,7 @@ from .views import (
 app_name = 'equipment'
 
 urlpatterns = [
-    path('', EquipmentListView.as_view(), name='equipment_list'),
+    path('', views.EquipmentListView.as_view(), name='equipment_list'),
     path('<int:pk>/', views.EquipmentDetailView.as_view(), name='equipment_detail'),
     path('add/', EquipmentCreateView.as_view(), name='equipment_create'),
     path('<int:equipment_id>/contact/', views.contact_seller, name='contact_seller'),

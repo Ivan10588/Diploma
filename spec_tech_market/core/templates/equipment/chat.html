@@ -8,7 +8,7 @@
 
     {% if equipment %}
         <div class="alert alert-info">
-            Обсуждение объявления: <a href="{% url 'equipment_detail' equipment.pk %}">{{ equipment.title }}</a>
+            Обсуждение объявления: <a href="{% url 'equipment:equipment_detail' equipment.pk %}">{{ equipment.title }}</a>
         </div>
     {% endif %}
 
@@ -32,6 +32,6 @@
         </div>
     </form>
 
-    <a href="{% url 'equipment_list' %}" class="btn btn-secondary mt-3">Вернуться к списку техники</a>
+    <a href="{% url 'equipment:equipment_list' %}" class="btn btn-secondary mt-3">Вернуться к списку техники</a>
 </div>
 {% endblock %}
