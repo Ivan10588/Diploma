@@ -187,4 +187,5 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL = 'users:login'
+LOGIN_REDIRECT_URL = '/'

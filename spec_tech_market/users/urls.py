@@ -10,3 +10,5 @@ urlpatterns = [
     path('api/send-verification-code/', SendVerificationCodeView.as_view(), name='send_verification_code'),
     path('api/verify-code/', VerifyCodeView.as_view(), name='verify_code'),
 ]
+
+app_name = 'users'

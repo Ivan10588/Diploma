@@ -88,7 +88,8 @@
                 </a>
             </div>
 
-            <form method="post" action="{% url 'contact_seller' equipment.pk %}" enctype="multipart/form-data">
+            <form method="post" action="{% url 'equipment:contact_seller' equipment.pk %}" enctype="multipart/form-data">
+
                 {% csrf_token %}
 
                 <div class="mb-3">

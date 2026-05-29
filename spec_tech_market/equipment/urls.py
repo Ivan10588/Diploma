@@ -13,9 +13,9 @@ app_name = 'equipment'
 
 urlpatterns = [
     path('', EquipmentListView.as_view(), name='equipment_list'),
-    path('<int:pk>/', EquipmentDetailView.as_view(), name='equipment_detail'),
+    path('<int:pk>/', views.EquipmentDetailView.as_view(), name='equipment_detail'),
     path('add/', EquipmentCreateView.as_view(), name='equipment_create'),
-    path('<int:equipment_id>/contact/', contact_seller, name='contact_seller'),
+    path('<int:equipment_id>/contact/', views.contact_seller, name='contact_seller'),
     path('<int:equipment_id>/toggle-sold/', toggle_sold_status, name='toggle_sold_status'),
     path('review/add/<int:equipment_id>/', add_review, name='add_review'),
     path('favorite/toggle/<int:equipment_id>/', toggle_favorite, name='toggle_favorite'),

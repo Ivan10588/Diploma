@@ -94,19 +94,17 @@ class EquipmentCreateView(CreateView):
         return context
 
 def contact_seller(request, equipment_id):
-    equipment = get_object_or_404(Equipment, id=equipment_id)
-
+    equipment = get_object_or_404(Equipment, pk=equipment_id)
     if request.method == 'POST':
-        form = ContactSellerForm(request.POST)
-        if form.is_valid():
-            messages.success(request, 'Ваш запрос успешно отправлен продавцу!')
-            return redirect('equipment:equipment_detail', equipment.pk)
-    else:
-        form = ContactSellerForm()
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message = request.POST.get('message')
 
-    return render(request, 'equipment/contact_seller.html', {
-        'form': form,
-        'equipment': equipment
+        messages.success(request, f'Сообщение для продавца {equipment.owner.username} отправлено!')
+        return redirect('equipment:equipment_detail', pk=equipment_id)
+
+    return render(request, 'equipment/equipment_detail.html', {
+        'equipment': equipment,
     })
 
 def toggle_sold_status(request, equipment_id):
