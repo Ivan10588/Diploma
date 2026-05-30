@@ -35,4 +35,5 @@ urlpatterns = [
     path('export/pdf/<int:comparison_id>/', views.export_comparison_to_pdf, name='export_comparison_pdf'),
     path('accounts/', include('accounts.urls')),
     path('api/save-search/', save_search, name='save_search'),
+    path('profile/', views.profile, name='user_profile'),
 ]

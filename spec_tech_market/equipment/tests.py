@@ -1,9 +1,11 @@
 from django.test import TestCase, Client
+from django.contrib.auth.models import User
 from django.urls import reverse
 from .models import SavedSearch, NewEquipmentNotification
 from equipment.models import Equipment
 from django.utils import timezone
 from datetime import timedelta
+from rest_framework.test import APITestCase
 
 class SavedSearchTestCase(TestCase):
     def setUp(self):
@@ -87,3 +89,19 @@ class SavedSearchTestCase(TestCase):
         html_content = render_to_string('emails/new_equipment_notification.html', context)
         self.assertIn('Heavy Equipment', html_content)
         self.assertIn('Heavy Loader', html_content)
+
+class SavedSearchesAPITest(APITestCase):
+  def setUp(self):
+    self.user = User.objects.create_user(username='testuser', password='testpass')
+    self.client.login(username='testuser', password='testpass')
+
+  def test_save_search(self):
+    data = {
+      'name': 'Мой поиск',
+      'filters': {'price_min': 1000, 'price_max': 5000},
+      'notify': True,
+      'frequency': 'daily'
+    }
+    response = self.client.post('/equipment/api/save-search/', data, format='json')
+    self.assertEqual(response.status_code, 200)
+    self.assertTrue(SavedSearch.objects.filter(name='Мой поиск').exists())

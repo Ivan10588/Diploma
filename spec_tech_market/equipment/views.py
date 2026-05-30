@@ -372,3 +372,50 @@ def profile(request):
     }
     return render(request, 'equipment/profile.html', context)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_search(request):
+  data = request.data
+  name = data.get('name', '').strip()
+  filters = data.get('filters', {})
+
+  errors = {}
+  if not name:
+    errors['name'] = 'Название поиска обязательно'
+  elif len(name) > 100:
+    errors['name'] = 'Название не должно превышать 100 символов'
+
+  if SavedSearch.objects.filter(user=request.user, name=name).exists():
+    errors['name'] = 'Поиск с таким названием уже существует'
+
+  if errors:
+    return Response({'errors': errors}, status=400)
+
+  try:
+    saved_search = SavedSearch.objects.create(
+      user=request.user,
+      name=name,
+      filters=filters,
+      notify=data.get('notify', True),
+      frequency=data.get('frequency', 'daily')
+    )
+    return Response({
+      'status': 'saved',
+      'id': saved_search.id
+    })
+  except Exception as e:
+    return Response(
+      {'error': 'Ошибка при сохранении поиска'},
+      status=500
+    )
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_search(request, search_id):
+    try:
+        search = SavedSearch.objects.get(id=search_id, user=request.user)
+        search.delete()
+        return Response(status=204)
+    except SavedSearch.DoesNotExist:
+        return Response({'error': 'Поиск не найден'}, status=404)
+

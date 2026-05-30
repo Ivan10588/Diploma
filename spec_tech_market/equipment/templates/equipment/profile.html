@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет — {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+  <h1>Личный кабинет</h1>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="saved-searches-tab">Сохранённые поиски</button>
+    <button class="tab-btn" data-tab="my-equipment-tab">Моё оборудование</button>
+  </div>
+
+  <div class="tab-content active" id="saved-searches-tab">
+    {% include "equipment/partials/saved_searches_tab.html" %}
+  </div>
+
+  <div class="tab-content" id="my-equipment-tab">
+    <p>Здесь будет отображаться ваше оборудование.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'equipment/js/saved_searches.js' %}"></script>
+<script>
+
+document.addEventListener('DOMContentLoaded', function() {
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      tabContents.forEach(content => content.classList.remove('active'));
+
+      this.classList.add('active');
+      const tabId = this.getAttribute('data-tab');
+      document.getElementById(tabId).classList.add('active');
+    });
+  });
+});
+</script>
+{% endblock %}
