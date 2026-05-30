@@ -5,7 +5,7 @@ from .views import (
     EquipmentListView, EquipmentDetailView, EquipmentCreateView, 
     contact_seller, add_review, toggle_favorite, add_to_comparison, comparison_view, chat_view, 
     chat_view, toggle_sold_status, register, equipment_list, user_profile, SaveSearchView, ToggleNotificationView,
-    DeleteSearchView, export_comparison_to_pdf
+    DeleteSearchView, export_comparison_to_pdf, save_search 
 )
 
 
@@ -34,4 +34,5 @@ urlpatterns = [
     path('api/delete-search/<int:search_id>/', DeleteSearchView.as_view(), name='delete_search'),
     path('export/pdf/<int:comparison_id>/', views.export_comparison_to_pdf, name='export_comparison_pdf'),
     path('accounts/', include('accounts.urls')),
+    path('api/save-search/', save_search, name='save_search'),
 ]

@@ -23,6 +23,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 
 class EquipmentListView(ListView):
@@ -337,3 +340,35 @@ def user_profile(request):
     }
 
     return render(request, 'equipment/user_profile.html', context)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_search(request):
+    data = request.data
+    name = data.get('name')
+    filters = data.get('filters')
+
+    if not name:
+        return Response(
+            {'error': 'Название поиска обязательно'},
+            status=400
+        )
+
+    SavedSearch.objects.create(
+        user=request.user,
+        name=name,
+        filters=filters,
+        notify=data.get('notify', True),
+        frequency=data.get('frequency', 'daily')
+    )
+
+    return Response({'status': 'saved'})
+
+@login_required
+def profile(request):
+    saved_searches = SavedSearch.objects.filter(user=request.user).order_by('-updated_at')
+    context = {
+        'saved_searches': saved_searches
+    }
+    return render(request, 'equipment/profile.html', context)
+

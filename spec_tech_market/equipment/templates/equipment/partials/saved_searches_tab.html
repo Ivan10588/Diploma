@@ -1,0 +1,23 @@
+<div class="saved-searches">
+  <h3>Сохранённые поиски</h3>
+  {% for search in saved_searches %}
+    <div class="search-item">
+      <div class="search-info">
+        <strong>{{ search.name }}</strong>
+        <small>Обновлено: {{ search.updated_at|date:"d.m.Y H:i" }}</small>
+      </div>
+      <div class="search-actions">
+        <label>
+          <input type="checkbox" {% if search.notify %}checked{% endif %}
+                 onchange="toggleNotification({{ search.id }}, this.checked)">
+          Получать уведомления
+        </label>
+        <button class="btn btn-sm btn-outline-danger" onclick="deleteSearch({{ search.id }})">
+          Удалить
+        </button>
+      </div>
+    </div>
+  {% empty %}
+    <p>У вас пока нет сохранённых поисков.</p>
+  {% endfor %}
+</div>

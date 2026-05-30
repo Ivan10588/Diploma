@@ -136,3 +136,24 @@ class SellerRating(models.Model):
 
     def __str__(self):
         return f'{self.seller.username} — {self.average_score:.1f} ({self.review_count} отзывов)'
+
+class SavedSearch(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, verbose_name='Название поиска')
+    filters = models.JSONField(verbose_name='Параметры поиска')
+    notify = models.BooleanField(default=True, verbose_name='Получать уведомления')
+    frequency = models.CharField(
+        max_length=20,
+        choices=[('daily', 'Ежедневно'), ('weekly', 'Еженедельно')],
+        default='daily',
+        verbose_name='Частота уведомлений'
+    )
+    last_notified = models.DateTimeField(null=True, blank=True, verbose_name='Последнее уведомление')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['user', 'name']
+
+    def __str__(self):
+        return self.name
