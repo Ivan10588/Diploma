@@ -419,3 +419,7 @@ def delete_search(request, search_id):
     except SavedSearch.DoesNotExist:
         return Response({'error': 'Поиск не найден'}, status=404)
 
+@login_required
+def user_profile(request):
+    profile = request.user.profile
+    return render(request, 'profile.html', {'profile': profile})

@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'spec_tech.equipment.middleware.VerificationCheckMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -189,3 +190,11 @@ CELERY_BEAT_SCHEDULE = {
 
 LOGIN_URL = 'users:login'
 LOGIN_REDIRECT_URL = '/'
+
+NOTIFICATION_FREQUENCIES = {
+    'daily': 24,
+    'weekly': 168,
+}
+
+VERIFICATION_CODE_LENGTH = 6
+VERIFICATION_CODE_EXPIRY = 10

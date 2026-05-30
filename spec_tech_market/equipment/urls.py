@@ -36,4 +36,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('api/save-search/', save_search, name='save_search'),
     path('profile/', views.profile, name='user_profile'),
+    path('api/add-to-comparison/<int:equipment_id>/', views.add_to_comparison, name='add_to_comparison'),
+    path('api/send-verification-code/', views.send_verification_code, name='send_verification_code'),
+    path('api/verify-code/', views.verify_code, name='verify_code'),
 ]

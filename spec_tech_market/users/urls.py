@@ -9,6 +9,7 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('api/send-verification-code/', SendVerificationCodeView.as_view(), name='send_verification_code'),
     path('api/verify-code/', VerifyCodeView.as_view(), name='verify_code'),
+    path('profile/', views.user_profile, name='user_profile'),
 ]
 
 app_name = 'users'

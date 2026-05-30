@@ -23,6 +23,11 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
+    path('profile/', RedirectView.as_view(url='/equipment/profile/', permanent=False), name='user_profile'),
+    path('contact/', include('contact.urls'), name='contact'),
+    path('debug-urls/', include('debug_toolbar.urls'), name='debug_urls'),
+    path('logout/', include('users.urls'), name='logout'),
+    path('login/', include('users.urls'), name='login'),
     path('equipment/', include('equipment.urls', namespace='equipment')),
     path('users/', include('users.urls', namespace='users')),
 ]
