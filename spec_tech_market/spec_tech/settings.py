@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'users',
     'spec_tech',
     'accounts',
-    'portfolio',
+    # 'portfolio',
 ]
 
 MIDDLEWARE = [
