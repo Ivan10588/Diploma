@@ -1,0 +1,37 @@
+.saved-searches {
+  margin: 20px 0;
+}
+
+.search-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #f9f9f9;
+}
+
+.search-info strong {
+  font-size: 16px;
+  color: #333;
+}
+
+.search-info small {
+  color: #666;
+  margin-left: 15px;
+}
+
+.search-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-actions label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}

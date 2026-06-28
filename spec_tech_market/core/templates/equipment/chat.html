@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}
+  {% if chat_type == 'general' %}Общий чат{% elif equipment %}Чат по технике: {{ equipment.title }}{% else %}Чат с {{ other_user.username }}{% endif %}
+{% endblock %}
+
+{% block content %}
+<h2>
+  {% if chat_type == 'general' %}Общий чат
+  {% elif equipment %}Обсуждение техники: {{ equipment.title }}
+  {% else %}Чат с {{ other_user.username }}{% endif %}
+</h2>
+
+<div class="chat-container p-3 bg-white rounded shadow-sm mb-3" style="max-height: 500px; overflow-y: auto;">
+  {% for message in messages %}
+    <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+      <strong>{{ message.sender.username }}</strong>
+      <div style="margin-top: 0.25rem;">{{ message.message }}</div>
+      <small class="text-muted" style="display:block; margin-top:0.25rem;">
+        {{ message.timestamp|date:"d.m.Y H:i" }}
+      </small>
+    </div>
+    <hr style="border-top: 1px dashed #ccc; margin: 0.5rem 0;">
+  {% empty %}
+    <p class="text-muted">Пока нет сообщений.</p>
+  {% endfor %}
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="input-group">
+    <input type="text" name="message" class="form-control" placeholder="Ваше сообщение" required>
+    <button type="submit" class="btn btn-primary">Отправить</button>
+  </div>
+</form>
+{% endblock %}

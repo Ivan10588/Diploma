@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}{{ equipment.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            {% if equipment.image %}
+                <img src="{{ equipment.image.url }}" class="img-fluid mb-3" alt="{{ equipment.title }}">
+            {% endif %}
+            <h1>{{ equipment.title }}</h1>
+
+            {% if request.user == equipment.owner %}
+                <div class="mt-3">
+                    <form method="post" action="{% url 'toggle_sold_status' equipment.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn {% if equipment.is_sold %}btn-success{% else %}btn-warning{% endif %}">
+                    {% if equipment.is_sold %}
+                        <i class="fas fa-check"></i> Продана
+            {% else %}
+                        <i class="fas fa-times"></i> Не продана
+            {% endif %}
+                </button>
+            </form>
+        </div>
+        <div class="mt-3">
+            <button class="btn {% if is_favorite %}btn-warning{% else %}btn-outline-warning{% endif %} ms-2"
+                onclick="location.href='{% url 'toggle_favorite' equipment.pk %}'">
+                {% if is_favorite %}
+            <i class="fas fa-star"></i> В избранном
+                {% else %}
+            <i class="far fa-star"></i> В избранное
+                {% endif %}
+            </button>
+        </div>
+        {% endif %}
+
+            <p><strong>Статус:</strong>
+                {% if equipment.is_sold %}
+                    <span class="badge bg-danger">Продана</span>
+                {% else %}
+            <span class="badge bg-success">В продаже</span>
+                {% endif %}
+            </p>
+
+            <p><strong>Категория:</strong> {% if equipment.category == 'sale' %}Продажа{% else %}Аренда{% endif %}</p>
+            <p><strong>Тип техники:</strong> {{ equipment.equipment_type.name }}</p>
+            <p><strong>Модель:</strong> {{ equipment.model }}</p>
+            <p><strong>Год выпуска:</strong> {{ equipment.year }}</p>
+            <p><strong>Наработка:</strong> {{ equipment.hours_worked }} мото‑часов</p>
+            <p><strong>Цена/Ставка:</strong> {{ equipment.price }} руб.</p>
+            <p><strong>Регион:</strong> {{ equipment.region.name }}</p>
+            <p><strong>Просмотров:</strong> {{ equipment.views_count }}</p>
+            <p><strong>Описание:</strong><br>{{ equipment.description }}</p>
+            <p><strong>Добавлено:</strong> {{ equipment.created_at|date:"d.m.Y H:i" }}</p>
+        </div>
+
+        <div class="col-md-4">
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Рейтинг продавца</h5>
+                    <div class="seller-rating">
+                <div class="rating-stars">
+                    {% with full_stars=equipment.owner.rating.average_score|floatformat:0 %}
+                {% for i in "01234"|make_list %}
+                    <i class="fas fa-star{% if i|add:"0" < full_stars %} text-warning{% else %} text-muted{% endif %}"></i>
+                {% endfor %}
+            {% endwith %}
+                </div>
+                <span class="rating-value">{{ equipment.owner.rating.average_score|floatformat:1 }}</span>
+                <span class="review-count">({{ equipment.owner.rating.review_count }} отзывов)</span>
+                <div class="completion-rate">
+                    Уровень завершённости: {{ equipment.owner.rating.completion_rate|floatformat:0 }}%
+                </div>
+            </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Связаться с продавцом</h5>
+                    <p>Владелец: {{ equipment.owner.username }}</p>
+
+            <div class="mb-3">
+                <a href="{% url 'equipment:chat_for_equipment' equipment_id=equipment.pk %}" class="btn btn-primary w-100">
+            <i class="fas fa-comments me-2"></i>Написать продавцу
+                </a>
+            </div>
+
+            <form method="post" action="{% url 'equipment:contact_seller' equipment.pk %}" enctype="multipart/form-data">
+
+                {% csrf_token %}
+
+                <div class="mb-3">
+            <label for="name" class="form-label">Ваше имя</label>
+            <input type="text" name="name" id="name" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" name="email" id="email" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+            <label for="message" class="form-label">Сообщение</label>
+            <textarea name="message" id="message" rows="4" class="form-control" placeholder="Опишите ваш запрос..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-paper-plane me-2"></i>Отправить запрос
+                </button>
+            </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

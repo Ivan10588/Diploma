@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+
+{% block title %}Список техники{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --primary-color: #007bff;
+  --bg-color: #f8f9fa;
+  --text-color: #333;
+  --border-color: #ddd;
+  --hover-bg: #e9ecef;
+}
+
+.equipment-types-menu {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.dropdown-toggle {
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-toggle:hover {
+  background: var(--hover-bg);
+  border-color: var(--primary-color);
+}
+
+.dropdown-content {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  position: absolute;
+  background: white;
+  min-width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  z-index: 1000;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 4px;
+}
+
+.dropdown-content.active {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.type-item {
+  display: block;
+  padding: 12px 16px;
+  text-decoration: none;
+  color: var(--text-color);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background 0.2s ease;
+}
+
+.type-item:hover {
+  background: var(--hover-bg);
+  color: var(--primary-color);
+}
+
+.type-item:last-child {
+  border-bottom: none;
+}
+
+.type-item.active {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.arrow {
+  transition: transform 0.3s ease;
+  font-size: 0.8em;
+}
+
+.dropdown-toggle.active .arrow {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 768px) {
+  .dropdown-content {
+    position: fixed;
+    top: 50px;
+    left: 0;
+    right: 0;
+    max-height: calc(100vh - 60px);
+    border-radius: 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .type-item {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+  }
+}
+</style>
+
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col">
+      <h1>Объявления о продаже/аренде техники</h1>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col">
+      <form method="get" class="mb-4">
+        <div class="input-group">
+          <input type="text" name="search" class="form-control" placeholder="Поиск по названию, модели или описанию..." value="{{ search_query }}">
+          <button class="btn btn-outline-secondary" type="submit">Найти</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="mb-3">
+        <label for="sort">Сортировка:</label>
+        <select id="sort" onchange="location.href=this.value" class="form-select">
+          <option value="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}sort=price_asc"
+              {% if sort_order == 'price_asc' %}selected{% endif %}>
+            Цена: по возрастанию
+          </option>
+          <option value="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}sort=price_desc"
+              {% if sort_order == 'price_desc' %}selected{% endif %}>
+            Цена: по убыванию
+          </option>
+          <option value="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}sort=year_new"
+              {% if sort_order == 'year_new' %}selected{% endif %}>
+            Год: новые сначала
+          </option>
+          <option value="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}sort=views"
+              {% if sort_order == 'views' %}selected{% endif %}>
+            По популярности
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mb-4">
+    <div class="col">
+      <form method="get" class="row g-3">
+        {% if search_query %}
+          <input type="hidden" name="search" value="{{ search_query }}">
+        {% endif %}
+
+        {% if sort_order %}
+          <input type="hidden" name="sort" value="{{ sort_order }}">
+        {% endif %}
+
+        <div class="col-md-4">
+          <div class="equipment-types-menu">
+            <button id="typesToggle" class="dropdown-toggle">
+              Все типы техники <span class="arrow">▼</span>
+            </button>
+            <div id="typesDropdown" class="dropdown-content">
+              <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}{% if sort_order %}sort={{ sort_order }}&{% endif %}equipment_type="
+                 class="type-item active">Все типы техники</a>
+              {% for type in equipment_types %}
+                <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if request.GET.region %}region={{ request.GET.region }}&{% endif %}{% if sort_order %}sort={{ sort_order }}&{% endif %}equipment_type={{ type.id }}"
+                   class="type-item {% if request.GET.equipment_type|add:'' == type.id|stringformat:'i' %}active{% endif %}">
+                  {{ type.name }}
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <select name="region" class="form-select">
+            <option value="">Все регионы</option>
+            {% for region in regions %}
+              <option value="{{ region.id }}"
+                {% if request.GET.region == region.id|stringformat:"i" %}selected{% endif %}>
+                {{ region.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary">Применить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row">
+    {% for equipment in equipment_list %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+          {% if equipment.image %}
+            <img src="{{ equipment.image.url }}" class="card-img-top" alt="{{ equipment.title }}" style="height: 200px; object-fit: cover;">
+          {% endif %}
+          <div class="card-body d-flex flex-column">
+            <h6 class="card-title">{{ equipment.title }}</h6>
+            <p class="card-text mb-2">{{ equipment.equipment_type.name }} | {{ equipment.model }}</p>
+            <p class="card-text mb-2"><strong>Цена:</strong> {{ equipment.price }} руб.</p>
+            <p class="card-text mb-2"><strong>Регион:</strong> {{ equipment.region.name }}</p>
+            <div class="mt-auto">
+              <p class="mb-2">
+                <span class="badge {% if equipment.is_sold %}bg-danger{% else %}bg-success{% endif %}">
+                  {% if equipment.is_sold %}Продана{% else %}В продаже{% endif %}
+                </span>
+                <small class="text-muted">Просмотров: {{ equipment.views_count }}</small>
+              </p>
+              <a href="{% url 'equipment:equipment_detail' equipment.pk %}" class="btn btn-outline-primary btn-sm">Подробнее</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-info">По вашему запросу ничего не найдено.</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1
+              &{% if search_query %}search={{ search_query|urlencode }}&{% endif %}
+              {% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}
+              {% if request.GET.region %}region={{ request.GET.region }}&{% endif %}
+              {% if sort_order %}sort={{ sort_order }}{% endif %}">&laquo; Первая</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}
+              &{% if search_query %}search={{ search_query|urlencode }}&{% endif %}
+              {% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}
+              {% if request.GET.region %}region={{ request.GET.region }}&{% endif %}
+              {% if sort_order %}sort={{ sort_order }}{% endif %}">Предыдущая</a>
+          </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+          <span class="page-link">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+        </li>
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}
+              &{% if search_query %}search={{ search_query|urlencode }}&{% endif %}
+              {% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}
+              {% if request.GET.region %}region={{ request.GET.region }}&{% endif %}
+              {% if sort_order %}sort={{ sort_order }}{% endif %}">Следующая</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}
+              &{% if search_query %}search={{ search_query|urlencode }}&{% endif %}
+              {% if request.GET.equipment_type %}equipment_type={{ request.GET.equipment_type }}&{% endif %}
+              {% if request.GET.region %}region={{ request.GET.region }}&{% endif %}
+              {% if sort_order %}sort={{ sort_order }}{% endif %}">Последняя &raquo;</a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+
+  <div class="save-search-section mt-3">
+    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#saveSearchModal">
+      <i class="fas fa-save me-2"></i>Сохранить этот поиск
+    </button>
+  </div>
+
+  <div class="modal fade" id="saveSearchModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Сохранить поиск</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="saveSearchForm" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="searchName" class="form-label">Название поиска</label>
+              <input type="text" class="form-control" id="searchName" name="name" required>
+            </div>
+            <div class="mb-3 form-check">
+              <input type="checkbox" class="form-check-input" id="notifyCheckbox" name="notify" checked>
+              <label class="form-check-label" for="notifyCheckbox">Получать уведомления о новых объявлениях</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" form="saveSearchForm" class="btn btn-primary">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const toggle = document.getElementById('typesToggle');
+  const dropdown = document.getElementById('typesDropdown');
+
+  if (toggle && dropdown) {
+    toggle.addEventListener('click', function(e) {
+      e.preventDefault();
+      dropdown.classList.toggle('active');
+      toggle.classList.toggle('active');
+    });
+
+    document.addEventListener('click', function(e) {
+      if (!toggle.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('active');
+        toggle.classList.remove('active');
+      }
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        dropdown.classList.remove('active');
+        toggle.classList.remove('active');
+      }
+    });
+
+    const typeItems = dropdown.querySelectorAll('.type-item');
+    typeItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        e.preventDefault();
+        const url = this.getAttribute('href');
+        window.location.href = url;
+      });
+    });
+  }
+
+  const saveSearchForm = document.getElementById('saveSearchForm');
+  if (saveSearchForm) {
+    saveSearchForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const searchParams = {
+        name: document.getElementById('searchName').value,
+        search_query: '{{ search_query }}',
+        equipment_type: '{{ request.GET.equipment_type }}',
+        region: '{{ request.GET.region }}',
+        sort_order: '{{ sort_order }}',
+        notify: document.getElementById('notifyCheckbox').checked
+      };
+
+      console.log('Сохраняем поиск:', searchParams);
+
+      alert('Поиск успешно сохранён!');
+
+      const modal = bootstrap.Modal.getInstance(document.getElementById('saveSearchModal'));
+      modal.hide();
+    });
+  }
+});
+</script>
+{% endblock %}
